@@ -11,6 +11,7 @@ urlpatterns = [
     path('tags', views.TagListView.as_view()),
     path('tags/<int:tag_id>', views.TagDetailView.as_view()),
     path('tags/<int:tag_id>/stats', views.TagStatsView.as_view()),
+    path('stats', views.StatsAllView.as_view()),
     path('stats/week', views.StatsPeriodView.as_view(), {'period': 'week'}),
     path('stats/month', views.StatsPeriodView.as_view(), {'period': 'month'}),
     path('stats/year', views.StatsPeriodView.as_view(), {'period': 'year'}),
