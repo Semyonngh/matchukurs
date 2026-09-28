@@ -10,21 +10,21 @@ from django.contrib.auth.models import User
 from .models import ExpenseArticle, Tag, Expense, ExpenseTag
 from .forms import ExpenseArticleForm, TagForm, ExpenseForm
 
-def to_dict_article(a):
-    return {'id': a.id, 'name': a.name, 'description': a.description}
+def to_dict_article(article):
+    return {'id': article.id, 'name': article.name, 'description': article.description}
 
-def to_dict_tag(t):
-    return {'id': t.id, 'name': t.name}
+def to_dict_tag(tag):
+    return {'id': tag.id, 'name': tag.name}
 
-def to_dict_expense(e):
-    tags = Tag.objects.filter(expense_tags__expense=e)
+def to_dict_expense(expense):
+    tags = Tag.objects.filter(expense_tags__expense=expense)
     return {
-        'id': e.id,
-        'amount': float(e.amount),
-        'description': e.description,
-        'expense_date': str(e.expense_date),
-        'article': {'id': e.article.id, 'name': e.article.name},
-        'tags': [to_dict_tag(t) for t in tags],
+        'id': expense.id,
+        'amount': float(expense.amount),
+        'description': expense.description,
+        'expense_date': str(expense.expense_date),
+        'article': {'id': expense.article.id, 'name': expense.article.name},
+        'tags': [to_dict_tag(tag) for tag in tags],
     }
 
 def period_range(period, ref_date=None):
@@ -53,50 +53,50 @@ def get_current_user(request):
 @method_decorator(csrf_exempt, name='dispatch')
 class CategoryListView(View):
     def get(self, request):
-        data = [to_dict_article(a) for a in ExpenseArticle.objects.all()]
+        data = [to_dict_article(article) for article in ExpenseArticle.objects.all()]
         return JsonResponse({'count': len(data), 'data': data})
 
     def post(self, request):
         form = ExpenseArticleForm(loads(request.body))
         if form.is_valid():
-            c = form.save(commit=False)
-            c.user = get_current_user(request)
-            if ExpenseArticle.objects.filter(user=c.user, name=c.name).exists():
+            category = form.save(commit=False)
+            category.user = get_current_user(request)
+            if ExpenseArticle.objects.filter(user=category.user, name=category.name).exists():
                 return JsonResponse({'error': 'Имя уже занято'}, status=400)
-            c.save()
-            return JsonResponse(to_dict_article(c), status=201)
+            category.save()
+            return JsonResponse(to_dict_article(category), status=201)
         return JsonResponse({'errors': form.errors}, status=400)
 
 class CategoryDetailView(View):
     def get(self, request, category_id):
-        c = get_object_or_404(ExpenseArticle, id=category_id)
-        return JsonResponse(to_dict_article(c))
+        category = get_object_or_404(ExpenseArticle, id=category_id)
+        return JsonResponse(to_dict_article(category))
 
 class CategoryExpensesView(View):
     def get(self, request, category_id):
-        c = get_object_or_404(ExpenseArticle, id=category_id)
-        expenses = Expense.objects.filter(article=c)
+        category = get_object_or_404(ExpenseArticle, id=category_id)
+        expenses = Expense.objects.filter(article=category)
         return JsonResponse({
-            'category': to_dict_article(c),
+            'category': to_dict_article(category),
             'count': expenses.count(),
-            'total': float(sum(e.amount for e in expenses)),
-            'data': [to_dict_expense(e) for e in expenses],
+            'total': float(sum(expense.amount for expense in expenses)),
+            'data': [to_dict_expense(expense) for expense in expenses],
         })
 
 class CategoryStatsView(View):
     def get(self, request, category_id):
-        c = get_object_or_404(ExpenseArticle, id=category_id)
-        expenses = Expense.objects.filter(article=c)
+        category = get_object_or_404(ExpenseArticle, id=category_id)
+        expenses = Expense.objects.filter(article=category)
         return JsonResponse({
-            'category': to_dict_article(c),
+            'category': to_dict_article(category),
             'count': expenses.count(),
-            'total': float(sum(e.amount for e in expenses)),
+            'total': float(sum(expense.amount for expense in expenses)),
         })
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ExpenseListView(View):
     def get(self, request):
-        data = [to_dict_expense(e) for e in Expense.objects.all()]
+        data = [to_dict_expense(expense) for expense in Expense.objects.all()]
         return JsonResponse({'count': len(data), 'data': data})
 
     def post(self, request):
@@ -104,50 +104,50 @@ class ExpenseListView(View):
         tag_ids = new_data.pop('tag_ids', [])
         form = ExpenseForm(new_data)
         if form.is_valid():
-            e = form.save(commit=False)
-            e.user = get_current_user(request)
-            e.save()
-            for tid in tag_ids:
-                ExpenseTag.objects.create(expense=e, tag_id=tid)
-            return JsonResponse(to_dict_expense(e), status=201)
+            expense = form.save(commit=False)
+            expense.user = get_current_user(request)
+            expense.save()
+            for tag_id in tag_ids:
+                ExpenseTag.objects.create(expense=expense, tag_id=tag_id)
+            return JsonResponse(to_dict_expense(expense), status=201)
         return JsonResponse({'errors': form.errors}, status=400)
 
 class ExpenseDetailView(View):
     def get(self, request, expense_id):
-        e = get_object_or_404(Expense, id=expense_id)
-        return JsonResponse(to_dict_expense(e))
+        expense = get_object_or_404(Expense, id=expense_id)
+        return JsonResponse(to_dict_expense(expense))
 
 @method_decorator(csrf_exempt, name='dispatch')
 class TagListView(View):
     def get(self, request):
-        data = [to_dict_tag(t) for t in Tag.objects.all()]
+        data = [to_dict_tag(tag) for tag in Tag.objects.all()]
         return JsonResponse({'count': len(data), 'data': data})
 
     def post(self, request):
         form = TagForm(loads(request.body))
         if form.is_valid():
-            t = form.save(commit=False)
-            t.user = get_current_user(request)
-            if Tag.objects.filter(user=t.user, name=t.name).exists():
+            tag = form.save(commit=False)
+            tag.user = get_current_user(request)
+            if Tag.objects.filter(user=tag.user, name=tag.name).exists():
                 return JsonResponse({'error': 'Имя уже занято'}, status=400)
-            t.save()
-            return JsonResponse(to_dict_tag(t), status=201)
+            tag.save()
+            return JsonResponse(to_dict_tag(tag), status=201)
         return JsonResponse({'errors': form.errors}, status=400)
 
 class TagDetailView(View):
     def get(self, request, tag_id):
-        t = get_object_or_404(Tag, id=tag_id)
-        return JsonResponse(to_dict_tag(t))
+        tag = get_object_or_404(Tag, id=tag_id)
+        return JsonResponse(to_dict_tag(tag))
 
 class TagStatsView(View):
     def get(self, request, tag_id):
-        t = get_object_or_404(Tag, id=tag_id)
-        ids = ExpenseTag.objects.filter(tag=t).values_list('expense_id', flat=True)
+        tag = get_object_or_404(Tag, id=tag_id)
+        ids = ExpenseTag.objects.filter(tag=tag).values_list('expense_id', flat=True)
         expenses = Expense.objects.filter(id__in=ids)
         return JsonResponse({
-            'tag': to_dict_tag(t),
+            'tag': to_dict_tag(tag),
             'count': expenses.count(),
-            'total': float(sum(e.amount for e in expenses)),
+            'total': float(sum(expense.amount for expense in expenses)),
         })
 
 class StatsAllView(View):
@@ -155,7 +155,7 @@ class StatsAllView(View):
         expenses = Expense.objects.all()
         return JsonResponse({
             'count': expenses.count(),
-            'total': float(sum(e.amount for e in expenses)),
+            'total': float(sum(expense.amount for expense in expenses)),
         })
 
 class StatsPeriodView(View):
@@ -167,7 +167,7 @@ class StatsPeriodView(View):
             'from': str(date_from),
             'to': str(date_to),
             'count': expenses.count(),
-            'total': float(sum(e.amount for e in expenses)),
+            'total': float(sum(expense.amount for expense in expenses)),
         })
 
 class StatsCustomPeriodView(View):
@@ -182,7 +182,7 @@ class StatsCustomPeriodView(View):
             'from': str(date_from),
             'to': str(date_to),
             'count': expenses.count(),
-            'total': float(sum(e.amount for e in expenses)),
+            'total': float(sum(expense.amount for expense in expenses)),
         })
 
 class StatsTodayView(View):
@@ -193,7 +193,7 @@ class StatsTodayView(View):
             'period': 'today',
             'date': str(today),
             'count': expenses.count(),
-            'total': float(sum(e.amount for e in expenses)),
+            'total': float(sum(expense.amount for expense in expenses)),
         })
 
 class StatsByCategoryView(View):
@@ -205,17 +205,17 @@ class StatsByCategoryView(View):
 
         expenses = Expense.objects.filter(expense_date__gte=date_from, expense_date__lte=date_to)
         data = []
-        for c in ExpenseArticle.objects.all():
-            cat_expenses = expenses.filter(article=c)
+        for category in ExpenseArticle.objects.all():
+            category_expenses = expenses.filter(article=category)
             data.append({
-                'category_id': c.id,
-                'name': c.name,
-                'count': cat_expenses.count(),
-                'total': float(sum(e.amount for e in cat_expenses)),
+                'category_id': category.id,
+                'name': category.name,
+                'count': category_expenses.count(),
+                'total': float(sum(expense.amount for expense in category_expenses)),
             })
         return JsonResponse({
             'from': str(date_from),
             'to': str(date_to),
-            'total': float(sum(e.amount for e in expenses)),
+            'total': float(sum(expense.amount for expense in expenses)),
             'data': data,
         })
