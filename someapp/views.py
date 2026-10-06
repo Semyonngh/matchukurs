@@ -236,6 +236,16 @@ class TagStatsView(View):
             'count': expenses.count(),
             'total': float(sum(expense.amount for expense in expenses)),
         })
+        
+class StatsAllView(View):
+    def get(self, request):
+        expenses = Expense.objects.all()
+        return JsonResponse({
+            'count': expenses.count(),
+            'total': float(sum(expense.amount for expense in expenses)),
+            'categories_count': ExpenseArticle.objects.count(),
+            'tags_count': Tag.objects.count(),
+        })
 
 class StatsPeriodView(View):
     def get(self, request, period):

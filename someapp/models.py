@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-
 class ExpenseArticle(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='articles')
     name = models.CharField(max_length=100)
@@ -19,7 +18,6 @@ class ExpenseArticle(models.Model):
     def __str__(self):
         return self.name
 
-
 class Tag(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tags')
     name = models.CharField(max_length=50)
@@ -35,7 +33,6 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
-
 
 class Expense(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='expenses')
@@ -54,7 +51,6 @@ class Expense(models.Model):
 
     def __str__(self):
         return f'{self.expense_date} — {self.amount}₽ ({self.article.name})'
-
 
 class ExpenseTag(models.Model):
     expense = models.ForeignKey(Expense, on_delete=models.CASCADE, related_name='expense_tags')
