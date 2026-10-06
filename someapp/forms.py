@@ -6,7 +6,6 @@ class ExpenseArticleForm(ModelForm):
         model = ExpenseArticle
         fields = ['name', 'description']
 
-
 class TagForm(ModelForm):
     class Meta:
         model = Tag
